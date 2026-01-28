@@ -1,0 +1,53 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+
+  api:
+    build: ./backend
+    environment:
+      - APP_ENV=${APP_ENV}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - MAX_UPLOAD_MB=${MAX_UPLOAD_MB}
+      - REDIS_URL=${REDIS_URL}
+      - RQ_QUEUE_NAME=${RQ_QUEUE_NAME}
+      # inside-container path (host path is COMPARE_DIR from env)
+      - COMPARE_DIR=/tmp/compare
+    depends_on:
+      - redis
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    expose:
+      - "8000"
+    volumes:
+      - ${COMPARE_DIR:-./compare_data}:/tmp/compare
+
+  worker:
+    build: ./backend
+    command: python -m app.worker
+    environment:
+      - APP_ENV=${APP_ENV}
+      - REDIS_URL=${REDIS_URL}
+      - RQ_QUEUE_NAME=${RQ_QUEUE_NAME}
+      - COMPARE_DIR=/tmp/compare
+    depends_on:
+      - redis
+    restart: unless-stopped
+    volumes:
+      - ${COMPARE_DIR:-./compare_data}:/tmp/compare
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - api
+    restart: unless-stopped
+    ports:
+      - "80:80"
+
+volumes:
+  redis_data:
