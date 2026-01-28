@@ -29,8 +29,9 @@ default_origins = "http://localhost:5173" if APP_ENV == "local" else ""
 origins_raw = os.getenv("CORS_ORIGINS", default_origins)
 origins = [o.strip() for o in origins_raw.split(",") if o.strip()]
 
-app = FastAPI()
-
+app = FastAPI(
+    root_path="/api" if APP_ENV == "cloud" else ""
+)
 # Only enable CORS if we actually have origins
 if origins:
     app.add_middleware(
