@@ -18,6 +18,7 @@ from .storage import make_job_dir, save_bytes, result_file_path
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 APP_ENV = os.getenv("APP_ENV", "local").lower()
+IS_CLOUD = APP_ENV == "cloud"
 
 # Upload limits (MB)
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "50"))
@@ -30,7 +31,10 @@ origins_raw = os.getenv("CORS_ORIGINS", default_origins)
 origins = [o.strip() for o in origins_raw.split(",") if o.strip()]
 
 app = FastAPI(
-    root_path="/api" if APP_ENV == "cloud" else ""
+    root_path="/api" if IS_CLOUD else "",
+    docs_url=None if IS_CLOUD else "/docs",
+    redoc_url=None if IS_CLOUD else "/redoc",
+    openapi_url=None if IS_CLOUD else "/openapi.json",
 )
 # Only enable CORS if we actually have origins
 if origins:
